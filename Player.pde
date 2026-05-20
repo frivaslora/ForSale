@@ -33,6 +33,21 @@ class Player {
     properties.add(propertyCard);
   }
 
+  String getPropertiesSummary() {
+    if (properties.isEmpty()) {
+      return "none";
+    }
+
+    String summary = "";
+    for (int i = 0; i < properties.size(); i++) {
+      summary += properties.get(i).toString();
+      if (i < properties.size() - 1) {
+        summary += ", ";
+      }
+    }
+    return summary;
+  }
+
   void addCheck(Card checkCard) {
     checks.add(checkCard);
   }
