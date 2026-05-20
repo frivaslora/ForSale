@@ -3,7 +3,7 @@ final int buttonW = 120;
 final int buttonH = 40;
 final int buyX = 20;
 final int passX = 160;
-final int buttonY = 220;
+final int buttonY = 280;
 
 void setup() {
   size(700, 420);
