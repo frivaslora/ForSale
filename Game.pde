@@ -1,106 +1,133 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Scanner;
 
-class BuyAndSellGame {
+class Game {
+  private Scanner scanner;
   private ArrayList<Player> players;
-  private Deck propertyDeck;
-  private Deck checkDeck;
-  private int currentPlayerIndex;
-  private Card currentCard;
-  private boolean gameOver;
-  private String status;
+  private Deck<PropertyCard> propertyDeck;
+  private Deck<CheckCard> checkDeck;
 
-  BuyAndSellGame(int playerCount, int startingCoins) {
+  Game(Scanner scanner, String[] playerNames, boolean[] isAI, int startingCoins) {
+    this.scanner = scanner;
     players = new ArrayList<Player>();
+    for (int i = 0; i < playerNames.length; i++) {
+      players.add(new Player(playerNames[i], startingCoins, isAI[i]));
+    }
+    propertyDeck = new Deck<PropertyCard>(createPropertyCards());
+    checkDeck = new Deck<CheckCard>(createCheckCards());
+  }
 
-    for (int i = 1; i <= playerCount; i++) {
-      players.add(new Player("Player " + i, startingCoins));
+  void play() {
+    println();
+    println("Starting game with " + players.size() + " players.");
+    println("Auction phase begins.");
+
+    int auctionStarter = 0;
+    int round = 1;
+    while (!propertyDeck.isEmpty()) {
+      println();
+      println("=== Auction Round " + round + " ===");
+      ArrayList<PropertyCard> offerings = propertyDeck.drawCards(players.size());
+      Collections.sort(offerings);
+      printPropertyOfferings(offerings);
+      AuctionRound auction = new AuctionRound(players, offerings, auctionStarter, scanner);
+      AuctionResult result = auction.run();
+      auctionStarter = result.winnerIndex;
+      round++;
     }
 
-    propertyDeck = createPropertyDeck();
-    checkDeck = createCheckDeck();
-  }
+    println();
+    println("Auction phase complete.");
+    println("Selling phase begins.");
 
-  void start() {
-    currentPlayerIndex = 0;
-    gameOver = false;
-    status = "Click BUY to purchase or PASS to skip the card.";
-    currentCard = drawNextCard();
-  }
-
-  Player getCurrentPlayer() {
-    return players.get(currentPlayerIndex);
-  }
-
-  ArrayList<Player> getPlayers() {
-    return players;
-  }
-
-  Card getCurrentCard() {
-    return currentCard;
-  }
-
-  boolean isGameOver() {
-    return gameOver;
-  }
-
-  String getStatus() {
-    return status;
-  }
-
-  void buyCurrentProperty() {
-    if (gameOver || currentCard == null) {
-      return;
+    int sellingRound = 1;
+    while (playersHaveProperties()) {
+      ArrayList<Player> sellers = activePlayers();
+      if (sellers.isEmpty()) {
+        break;
+      }
+      println();
+      println("=== Selling Round " + sellingRound + " ===");
+      ArrayList<CheckCard> checks = checkDeck.drawCards(sellers.size());
+      Collections.sort(checks);
+      printCheckOfferings(checks);
+      SellingRound selling = new SellingRound(sellers, checks, scanner);
+      selling.run();
+      sellingRound++;
     }
 
-    Player player = getCurrentPlayer();
-    int cost = currentCard.getValue();
-
-    if (player.getCoins() >= cost) {
-      player.spendCoins(cost);
-      player.addProperty(currentCard);
-      status = player.getName() + " bought " + currentCard.toString() + ".";
-    } else {
-      status = player.getName() + " does not have enough coins to buy this card.";
-    }
-
-    nextTurn();
+    println();
+    println("=== Final Results ===");
+    printFinalResults();
   }
 
-  void passCurrentProperty() {
-    if (gameOver || currentCard == null) {
-      return;
+  private ArrayList<PropertyCard> createPropertyCards() {
+    ArrayList<PropertyCard> cards = new ArrayList<PropertyCard>();
+    for (int value = 1; value <= 20; value++) {
+      cards.add(new PropertyCard(value));
     }
-
-    status = getCurrentPlayer().getName() + " passed on " + currentCard.toString() + ".";
-    nextTurn();
+    return cards;
   }
 
-  void nextTurn() {
-    if (propertyDeck.isEmpty()) {
-      gameOver = true;
-      currentCard = null;
-      status = "Deck empty. Game over!";
-      return;
+  private ArrayList<CheckCard> createCheckCards() {
+    int[] values = {0, 0, 2000, 2000, 3000, 3000, 4000, 4000, 5000, 5000, 6000, 6000, 7000, 7000, 8000, 8000, 9000, 9000, 10000, 10000};
+    ArrayList<CheckCard> cards = new ArrayList<CheckCard>();
+    for (int value : values) {
+      cards.add(new CheckCard(value));
     }
-
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-    currentCard = drawNextCard();
+    return cards;
   }
 
-  Card drawNextCard() {
-    if (propertyDeck.isEmpty()) {
-      gameOver = true;
-      status = "No more property cards.";
-      return null;
-    }
-    return propertyDeck.draw();
-  }
-
-  String getFinalScoreSummary() {
-    String result = "";
+  private boolean playersHaveProperties() {
     for (Player player : players) {
-      result += player.getName() + ": " + player.getFinalScore() + " points\n";
+      if (!player.getProperties().isEmpty()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private ArrayList<Player> activePlayers() {
+    ArrayList<Player> result = new ArrayList<Player>();
+    for (Player player : players) {
+      if (!player.getProperties().isEmpty()) {
+        result.add(player);
+      }
     }
     return result;
+  }
+
+  private void printPropertyOfferings(ArrayList<PropertyCard> offerings) {
+    print("Property cards showing: ");
+    for (PropertyCard card : offerings) {
+      print(card.getValue() + " ");
+    }
+    println();
+    printPlayerStatuses();
+  }
+
+  private void printCheckOfferings(ArrayList<CheckCard> checks) {
+    print("Check cards showing:    ");
+    for (CheckCard check : checks) {
+      print(check.getValue() + " ");
+    }
+    println();
+    printPlayerStatuses();
+  }
+
+  private void printPlayerStatuses() {
+    for (Player player : players) {
+      println(player.getSummary());
+    }
+  }
+
+  private void printFinalResults() {
+    ArrayList<Player> ranking = new ArrayList<Player>(players);
+    Collections.sort(ranking, Collections.reverseOrder());
+    for (int i = 0; i < ranking.size(); i++) {
+      Player player = ranking.get(i);
+      println((i + 1) + ". " + player.getName() + " — " + player.getFinalScore() + " points (coins " + player.getCoins() + ", checks " + player.getCheckTotal() + ")");
+    }
   }
 }

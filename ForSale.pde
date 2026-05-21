@@ -1,82 +1,79 @@
-BuyAndSellGame game;
-final int buttonW = 120;
-final int buttonH = 40;
-final int buyX = 20;
-final int passX = 160;
-final int buttonY = 280;
+import java.util.Scanner;
+
+Game game;
+Scanner scanner;
 
 void setup() {
-  size(700, 420);
-  textAlign(LEFT, TOP);
-  game = new BuyAndSellGame(2, 10);
-  game.start();
+  size(100, 100);
+  println("=== Buy & Sell ===");
+  scanner = new Scanner(System.in);
+  game = buildGame();
+  game.play();
+  println("Game complete. Close the Processing window to exit.");
+  noLoop();
 }
 
-void draw() {
-  background(255);
-  fill(0);
-  textSize(24);
-  text("Buy & Sell", 20, 20);
+Game buildGame() {
+  int playerCount = askInt("How many players? (2-4): ", 2, 4);
+  int startingCoins = askInt("Starting coins per player? (8-24): ", 8, 24);
+  String[] names = new String[playerCount];
+  boolean[] isAI = new boolean[playerCount];
+  int humanCount = 0;
 
-  textSize(16);
-  text("Current player: " + game.getCurrentPlayer().getName(), 20, 70);
-  text("Player coins: " + game.getCurrentPlayer().getCoins(), 20, 100);
-
-  if (game.isGameOver()) {
-    textSize(18);
-    text("Game over! Final score:", 20, 150);
-    text(game.getFinalScoreSummary(), 20, 180);
-    textSize(16);
-    text("Click anywhere to restart.", 20, 260);
-  } else {
-    textSize(18);
-    text("Current card:", 20, 150);
-    textSize(16);
-    Card card = game.getCurrentCard();
-    text(card.toString(), 20, 180);
-
-    textSize(16);
-    text(game.getStatus(), 20, 240);
-    drawButton(buyX, buttonY, buttonW, buttonH, "BUY");
-    drawButton(passX, buttonY, buttonW, buttonH, "PASS");
-  }
-
-  drawPlayerTable(380, 60);
-}
-
-void drawButton(int x, int y, int w, int h, String label) {
-  fill(240);
-  rect(x, y, w, h, 8);
-  fill(0);
-  textSize(16);
-  textAlign(CENTER, CENTER);
-  text(label, x + w / 2, y + h / 2);
-  textAlign(LEFT, TOP);
-}
-
-void drawPlayerTable(int x, int y) {
-  fill(0);
-  textSize(16);
-  text("Players", x, y);
-  int lineY = y + 30;
-  for (Player p : game.getPlayers()) {
-    text(p.getName() + " — coins: " + p.getCoins() + " — properties: " + p.getPropertiesSummary(), x, lineY);
-    lineY += 24;
-  }
-}
-
-void mousePressed() {
-  if (game.isGameOver()) {
-    game = new BuyAndSellGame(2, 10);
-    game.start();
-    return;
-  }
-
-  if (mouseY >= buttonY && mouseY <= buttonY + buttonH) {
-    if (mouseX >= buyX && mouseX <= buyX + buttonW) {
-      game.buyCurrentProperty();
-    } else if (mouseX >= passX && mouseX <= passX + buttonW) {
-      game.passCurrentProperty();
+  for (int i = 0; i < playerCount; i++) {
+    println();
+    names[i] = askNonEmptyString("Name for player " + (i + 1) + ": ");
+    isAI[i] = askYesNo("Should " + names[i] + " be an AI? (y/n): ");
+    if (!isAI[i]) {
+      humanCount++;
     }
+  }
+
+  if (humanCount == 0) {
+    println("At least one human player is required. Setting player 1 to Human.");
+    isAI[0] = false;
+  }
+
+  return new Game(scanner, names, isAI, startingCoins);
+}
+
+int askInt(String prompt, int min, int max) {
+  while (true) {
+    print(prompt);
+    String line = scanner.nextLine().trim();
+    try {
+      int value = Integer.parseInt(line);
+      if (value >= min && value <= max) {
+        return value;
+      }
+    } catch (NumberFormatException e) {
+      // ignore
+    }
+    println("Please enter a number between " + min + " and " + max + ".");
+  }
+}
+
+String askNonEmptyString(String prompt) {
+  while (true) {
+    print(prompt);
+    String line = scanner.nextLine().trim();
+    if (!line.isEmpty()) {
+      return line;
+    }
+    println("Please enter a non-empty name.");
+  }
+}
+
+boolean askYesNo(String prompt) {
+  while (true) {
+    print(prompt);
+    String line = scanner.nextLine().trim().toLowerCase();
+    if (line.equals("y") || line.equals("yes")) {
+      return true;
+    }
+    if (line.equals("n") || line.equals("no")) {
+      return false;
+    }
+    println("Please answer y or n.");
   }
 }

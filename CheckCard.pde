@@ -1,7 +1,7 @@
-class PropertyCard implements Comparable<PropertyCard> {
+class CheckCard implements Comparable<CheckCard> {
   private int value;
 
-  PropertyCard(int value) {
+  CheckCard(int value) {
     this.value = value;
   }
 
@@ -10,10 +10,10 @@ class PropertyCard implements Comparable<PropertyCard> {
   }
 
   public String toString() {
-    return "Property " + value;
+    return "Check " + value;
   }
 
-  public int compareTo(PropertyCard other) {
+  public int compareTo(CheckCard other) {
     return value - other.value;
   }
 }
