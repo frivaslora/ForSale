@@ -43,7 +43,28 @@ class AuctionRound {
 
   String getPrompt() {
     return getCurrentPlayer().getName() + "'s turn. Current bid: " + currentBid
-      + ". Enter higher bid or P to pass.";
+      + ". Choose a higher bid or pass.";
+  }
+
+  String[] getButtonLabels() {
+    Player player = getCurrentPlayer();
+    ArrayList<String> labels = new ArrayList<String>();
+    labels.add("Pass");
+
+    addBidButton(labels, currentBid + 1, player);
+    addBidButton(labels, currentBid + 2, player);
+    addBidButton(labels, currentBid + 3, player);
+
+    if (player.getCoins() > currentBid + 3) {
+      labels.add(str(player.getCoins()));
+    }
+
+    String[] result = new String[labels.size()];
+    for (int i = 0; i < labels.size(); i++) {
+      result[i] = labels.get(i);
+    }
+
+    return result;
   }
 
   void handleAIMove() {
@@ -87,7 +108,7 @@ class AuctionRound {
         }
         raiseBid(player, bid);
       } catch (NumberFormatException e) {
-        game.gameLog("Please enter a number or P to pass.");
+        game.gameLog("Please choose a bid button or Pass.");
         return;
       }
     }
@@ -106,6 +127,12 @@ class AuctionRound {
 
   private Player getCurrentPlayer() {
     return players.get(activeIndices.get(currentOfferer));
+  }
+
+  private void addBidButton(ArrayList<String> labels, int bid, Player player) {
+    if (bid <= player.getCoins()) {
+      labels.add(str(bid));
+    }
   }
 
   private void advanceToNextPlayer() {

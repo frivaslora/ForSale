@@ -1,5 +1,8 @@
+import java.util.ArrayList;
+import java.util.Collections;
+
 Game game;
-String typedInput = "";
+ArrayList<Button> buttons;
 
 void setup() {
   size(1000, 620);
@@ -8,6 +11,7 @@ void setup() {
   textAlign(LEFT, TOP);
   game = new Game();
   game.start();
+  buttons = new ArrayList<Button>();
 }
 
 void draw() {
@@ -18,7 +22,7 @@ void draw() {
   text("ForSale - Game Window", 20, 20);
   textSize(18);
   text("Phase: " + game.getPhaseStatus(), 20, 60);
-  text("Enter text below and press ENTER to submit.", 20, 90);
+  text("Click a button to choose your move.", 20, 90);
 
   stroke(180);
   line(20, 120, width - 20, 120);
@@ -27,8 +31,7 @@ void draw() {
   text("Prompt:", 20, 130);
   text(game.getPrompt(), 20, 160, width - 40, 100);
 
-  fill(30);
-  text("Your input: " + typedInput, 20, 270);
+  drawButtons();
   stroke(120);
   line(20, 300, width - 20, 300);
 
@@ -50,19 +53,34 @@ void draw() {
   game.update();
 }
 
-void keyPressed() {
-  if (key == BACKSPACE) {
-    if (typedInput.length() > 0) {
-      typedInput = typedInput.substring(0, typedInput.length() - 1);
+void mousePressed() {
+  for (Button button : buttons) {
+    if (button.contains(mouseX, mouseY)) {
+      game.submitButton(button.getValue());
+      return;
     }
-  } else if (key == ENTER || key == RETURN) {
-    if (typedInput.trim().length() > 0) {
-      game.submitInput(typedInput.trim());
-      typedInput = "";
+  }
+}
+
+void drawButtons() {
+  buttons.clear();
+
+  String[] labels = game.getButtonLabels();
+  int buttonX = 20;
+  int buttonY = 260;
+  int buttonWidth = 110;
+  int buttonHeight = 34;
+  int gap = 10;
+
+  for (int i = 0; i < labels.length; i++) {
+    Button button = new Button(labels[i], labels[i], buttonX, buttonY, buttonWidth, buttonHeight);
+    buttons.add(button);
+    button.draw();
+
+    buttonX += buttonWidth + gap;
+    if (buttonX + buttonWidth > width - 20) {
+      buttonX = 20;
+      buttonY += buttonHeight + gap;
     }
-  } else if (key == TAB) {
-    // ignore
-  } else if (key >= ' ' && key <= '~') {
-    typedInput += key;
   }
 }

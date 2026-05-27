@@ -44,6 +44,17 @@ class SellingRound {
     return player.getName() + ", choose a property to sell: " + choices;
   }
 
+  String[] getButtonLabels() {
+    Player player = players.get(currentIndex);
+    String[] labels = new String[player.getProperties().size()];
+
+    for (int i = 0; i < labels.length; i++) {
+      labels[i] = str(i + 1);
+    }
+
+    return labels;
+  }
+
   void handleAIMove() {
     Player player = players.get(currentIndex);
     PropertyCard selection = player.choosePropertyForSelling();
@@ -79,7 +90,7 @@ class SellingRound {
       currentIndex++;
       advanceToNextPlayer();
     } catch (NumberFormatException e) {
-      game.gameLog("Please enter a number.");
+      game.gameLog("Please choose one of the property buttons.");
     }
   }
 

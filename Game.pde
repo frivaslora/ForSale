@@ -4,31 +4,20 @@ class Game {
   private static final String PHASE_SELLING = "SELLING";
   private static final String PHASE_COMPLETE = "COMPLETE";
 
-  private static final String INPUT_NONE = "NONE";
-  private static final String INPUT_INT_RANGE = "INT_RANGE";
-  private static final String INPUT_STRING = "STRING";
-  private static final String INPUT_YES_NO = "YES_NO";
-
   private static final String SETUP_PLAYER_COUNT = "PLAYER_COUNT";
   private static final String SETUP_STARTING_COINS = "STARTING_COINS";
-  private static final String SETUP_PLAYER_NAME = "PLAYER_NAME";
-  private static final String SETUP_PLAYER_AI = "PLAYER_AI";
+  private static final String SETUP_HUMAN_COUNT = "HUMAN_COUNT";
 
   private String phase;
-  private String inputType;
   private String setupStep;
   private String prompt;
   private ArrayList<String> log;
   private ArrayList<Player> players;
   private Deck<PropertyCard> propertyDeck;
   private Deck<CheckCard> checkDeck;
-  private int minValue;
-  private int maxValue;
   private int playerCount;
   private int startingCoins;
-  private int currentPlayerIndex;
-  private String[] playerNames;
-  private boolean[] playerAIs;
+  private int humanCount;
   private AuctionRound currentAuction;
   private SellingRound currentSelling;
   private int auctionStarter;
@@ -37,7 +26,6 @@ class Game {
 
   Game() {
     phase = PHASE_SETUP;
-    inputType = INPUT_NONE;
     setupStep = "";
     prompt = "";
     log = new ArrayList<String>();
@@ -95,21 +83,34 @@ class Game {
     return result;
   }
 
-  void submitInput(String input) {
+  String[] getButtonLabels() {
+    if (PHASE_COMPLETE.equals(phase)) {
+      return new String[0];
+    }
+    if (PHASE_AUCTION.equals(phase) && currentAuction != null && currentAuction.needsHumanInput()) {
+      return currentAuction.getButtonLabels();
+    }
+    if (PHASE_SELLING.equals(phase) && currentSelling != null && currentSelling.needsHumanInput()) {
+      return currentSelling.getButtonLabels();
+    }
+    return getSetupButtonLabels();
+  }
+
+  void submitButton(String value) {
     if (PHASE_COMPLETE.equals(phase)) {
       gameLog("The game is finished. No more input is needed.");
       return;
     }
     if (PHASE_AUCTION.equals(phase) && currentAuction != null && currentAuction.needsHumanInput()) {
-      currentAuction.submitHumanBid(input);
+      currentAuction.submitHumanBid(value);
       return;
     }
     if (PHASE_SELLING.equals(phase) && currentSelling != null && currentSelling.needsHumanInput()) {
-      currentSelling.submitHumanChoice(input);
+      currentSelling.submitHumanChoice(value);
       return;
     }
 
-    handleSetupInput(input);
+    handleSetupButton(value);
   }
 
   void gameLog(String message) {
@@ -149,132 +150,67 @@ class Game {
     }
   }
 
-  private void handleSetupInput(String input) {
-    switch (inputType) {
-      case INPUT_INT_RANGE:
-        handleNumberInput(input);
-        break;
-      case INPUT_STRING:
-        handleStringInput(input);
-        break;
-      case INPUT_YES_NO:
-        handleYesNoText(input);
-        break;
-      default:
-        gameLog("No input is expected right now.");
-        break;
+  private String[] getSetupButtonLabels() {
+    if (SETUP_PLAYER_COUNT.equals(setupStep)) {
+      String[] labels = {"2", "3", "4"};
+      return labels;
     }
-  }
-
-  private void handleNumberInput(String input) {
-    try {
-      int value = Integer.parseInt(input);
-      if (value < minValue || value > maxValue) {
-        gameLog("Please enter a value between " + minValue + " and " + maxValue + ".");
-        return;
+    if (SETUP_STARTING_COINS.equals(setupStep)) {
+      String[] labels = {"8", "12", "16", "20", "24"};
+      return labels;
+    }
+    if (SETUP_HUMAN_COUNT.equals(setupStep)) {
+      String[] labels = new String[playerCount];
+      for (int i = 0; i < playerCount; i++) {
+        labels[i] = str(i + 1);
       }
-      handleIntInput(value);
-    } catch (NumberFormatException e) {
-      gameLog("Please enter a valid number.");
+      return labels;
     }
+
+    return new String[0];
   }
 
-  private void handleYesNoText(String input) {
-    String normalized = input.toLowerCase();
-    if (normalized.equals("y") || normalized.equals("yes")) {
-      handleYesNoInput(true);
-    } else if (normalized.equals("n") || normalized.equals("no")) {
-      handleYesNoInput(false);
-    } else {
-      gameLog("Please answer 'y' or 'n'.");
-    }
+  private void handleSetupButton(String value) {
+    int number = Integer.parseInt(value);
+    handleIntInput(number);
   }
 
   private void askPlayerCount() {
     phase = PHASE_SETUP;
     setupStep = SETUP_PLAYER_COUNT;
-    prompt = "How many players? (2-4)";
-    inputType = INPUT_INT_RANGE;
-    minValue = 2;
-    maxValue = 4;
+    prompt = "How many players?";
   }
 
   private void askStartingCoins() {
     setupStep = SETUP_STARTING_COINS;
-    prompt = "Starting coins per player? (8-24)";
-    inputType = INPUT_INT_RANGE;
-    minValue = 8;
-    maxValue = 24;
+    prompt = "Starting coins per player?";
   }
 
-  private void askPlayerName() {
-    setupStep = SETUP_PLAYER_NAME;
-    prompt = "Enter name for player " + (currentPlayerIndex + 1) + ":";
-    inputType = INPUT_STRING;
-  }
-
-  private void askPlayerAI() {
-    setupStep = SETUP_PLAYER_AI;
-    prompt = "Should " + playerNames[currentPlayerIndex] + " be an AI? (y/n)";
-    inputType = INPUT_YES_NO;
+  private void askHumanCount() {
+    setupStep = SETUP_HUMAN_COUNT;
+    prompt = "How many human players? The rest will be AI players.";
   }
 
   private void handleIntInput(int value) {
     if (SETUP_PLAYER_COUNT.equals(setupStep)) {
       playerCount = value;
-      playerNames = new String[playerCount];
-      playerAIs = new boolean[playerCount];
-      currentPlayerIndex = 0;
       askStartingCoins();
     } else if (SETUP_STARTING_COINS.equals(setupStep)) {
       startingCoins = value;
-      currentPlayerIndex = 0;
-      askPlayerName();
+      askHumanCount();
+    } else if (SETUP_HUMAN_COUNT.equals(setupStep)) {
+      humanCount = value;
+      buildPlayers();
+      beginAuctionPhase();
     }
-  }
-
-  private void handleStringInput(String value) {
-    if (value.length() == 0) {
-      gameLog("Please enter a non-empty value.");
-      return;
-    }
-    if (SETUP_PLAYER_NAME.equals(setupStep)) {
-      playerNames[currentPlayerIndex] = value;
-      askPlayerAI();
-    }
-  }
-
-  private void handleYesNoInput(boolean isAIResponse) {
-    playerAIs[currentPlayerIndex] = isAIResponse;
-    currentPlayerIndex++;
-
-    if (currentPlayerIndex < playerCount) {
-      askPlayerName();
-      return;
-    }
-
-    if (noneHumanPlayers()) {
-      gameLog("At least one human player is required. Player 1 will be human.");
-      playerAIs[0] = false;
-    }
-    buildPlayers();
-    beginAuctionPhase();
-  }
-
-  private boolean noneHumanPlayers() {
-    for (boolean ai : playerAIs) {
-      if (!ai) {
-        return false;
-      }
-    }
-    return true;
   }
 
   private void buildPlayers() {
     players.clear();
 
     for (int i = 0; i < playerCount; i++) {
-      players.add(new Player(playerNames[i], startingCoins, playerAIs[i]));
+      boolean ai = i >= humanCount;
+      players.add(new Player("Player " + (i + 1), startingCoins, ai));
     }
 
     propertyDeck = new Deck<PropertyCard>(createPropertyCards());
@@ -285,7 +221,6 @@ class Game {
   private void beginAuctionPhase() {
     phase = PHASE_AUCTION;
     prompt = "Starting auction round " + auctionRound + ".";
-    inputType = INPUT_NONE;
     startNextAuctionRound();
   }
 
@@ -314,7 +249,6 @@ class Game {
   private void beginSellingPhase() {
     phase = PHASE_SELLING;
     prompt = "Starting selling phase " + sellingRound + ".";
-    inputType = INPUT_NONE;
     startNextSellingRound();
   }
 
