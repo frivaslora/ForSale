@@ -1,17 +1,15 @@
-# ForSale
+# For Sale
 
-Console Java version of **Buy & Sell**.
+Text-based Processing/Java version of **Buy & Sell**.
 
 ## Run
 
-Compile:
+Open the project folder in Processing, then run `ForSale.pde`.
 
-```bash
-javac src/*.java
-```
+## File Organization
 
-Run:
-
-```bash
-java -cp src Main
-```
+- `ForSale.pde` handles the sketch window, drawing text, and keyboard input.
+- `Game.pde` controls the game phases.
+- `AuctionRound.pde` handles bidding.
+- `SellingRound.pde` handles selling properties for checks.
+- `Player.pde`, `Deck.pde`, `Card.pde`, `PropertyCard.pde`, and `CheckCard.pde` are the main object classes.
