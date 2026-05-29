@@ -90,8 +90,14 @@ class Game {
     if (PHASE_AUCTION.equals(phase) && currentAuction != null && currentAuction.needsHumanInput()) {
       return currentAuction.getButtonLabels();
     }
+    if (PHASE_AUCTION.equals(phase)) {
+      return new String[0];
+    }
     if (PHASE_SELLING.equals(phase) && currentSelling != null && currentSelling.needsHumanInput()) {
       return currentSelling.getButtonLabels();
+    }
+    if (PHASE_SELLING.equals(phase)) {
+      return new String[0];
     }
     return getSetupButtonLabels();
   }
@@ -105,8 +111,16 @@ class Game {
       currentAuction.submitHumanBid(value);
       return;
     }
+    if (PHASE_AUCTION.equals(phase)) {
+      gameLog("Please wait for your turn.");
+      return;
+    }
     if (PHASE_SELLING.equals(phase) && currentSelling != null && currentSelling.needsHumanInput()) {
       currentSelling.submitHumanChoice(value);
+      return;
+    }
+    if (PHASE_SELLING.equals(phase)) {
+      gameLog("Please wait for your turn.");
       return;
     }
 
