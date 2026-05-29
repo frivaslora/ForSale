@@ -83,8 +83,9 @@ class AuctionRound {
     if (nextBid > player.getCoins() || player.getCoins() <= highestBid) {
       pass(player);
     } else {
-      raiseBid(player, nextBid);
-      advanceToNextPlayer();
+      if (raiseBid(player, nextBid)) {
+        advanceToNextPlayer();
+      }
     }
   }
 
@@ -113,8 +114,9 @@ class AuctionRound {
           game.gameLog("Bids must be in " + BID_INCREMENT + " coin increments.");
           return;
         }
-        raiseBid(player, bid);
-        advanceToNextPlayer();
+        if (raiseBid(player, bid)) {
+          advanceToNextPlayer();
+        }
       } catch (NumberFormatException e) {
         game.gameLog("Please choose a bid button or Pass.");
         return;
@@ -134,7 +136,7 @@ class AuctionRound {
   }
 
   private void addBidButton(ArrayList<String> labels, int bid, Player player) {
-    if (bid <= player.getCoins()) {
+    if (canAffordBid(player, bid)) {
       labels.add(str(bid));
     }
   }
@@ -148,9 +150,20 @@ class AuctionRound {
     currentOfferer = (currentOfferer + 1) % activeIndices.size();
   }
 
-  private void raiseBid(Player player, int bid) {
+  private boolean raiseBid(Player player, int bid) {
+    if (!canAffordBid(player, bid)) {
+      game.gameLog(player.getName() + " cannot bid " + bid + " with only "
+        + player.getCoins() + " coins.");
+      return false;
+    }
+
     playerBids.set(players.indexOf(player), bid);
     game.gameLog(player.getName() + " raises to " + bid + ".");
+    return true;
+  }
+
+  private boolean canAffordBid(Player player, int bid) {
+    return bid <= player.getCoins();
   }
 
   private void pass(Player player) {
