@@ -156,7 +156,7 @@ class Game {
       return labels;
     }
     if (SETUP_STARTING_COINS.equals(setupStep)) {
-      String[] labels = {"8", "12", "16", "20", "24"};
+      String[] labels = {"8000", "12000", "16000", "20000", "24000"};
       return labels;
     }
     if (SETUP_HUMAN_COUNT.equals(setupStep)) {

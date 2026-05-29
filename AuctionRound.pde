@@ -2,6 +2,7 @@ class AuctionRound {
   private ArrayList<Player> players;
   private ArrayList<PropertyCard> offerings;
   private ArrayList<Integer> activeIndices;
+  private ArrayList<Integer> playerBids;
   private int currentOfferer;
   private int currentBid;
   private boolean finished;
@@ -13,9 +14,11 @@ class AuctionRound {
     this.game = game;
     currentBid = 0;
     activeIndices = new ArrayList<Integer>();
+    playerBids = new ArrayList<Integer>();
 
     for (int i = 0; i < players.size(); i++) {
       activeIndices.add(i);
+      playerBids.add(0);
     }
 
     currentOfferer = activeIndices.indexOf(starterIndex);
@@ -79,9 +82,6 @@ class AuctionRound {
       pass(player);
     } else {
       raiseBid(player, nextBid);
-    }
-
-    if (!finished) {
       advanceToNextPlayer();
     }
   }
@@ -107,14 +107,11 @@ class AuctionRound {
           return;
         }
         raiseBid(player, bid);
+        advanceToNextPlayer();
       } catch (NumberFormatException e) {
         game.gameLog("Please choose a bid button or Pass.");
         return;
       }
-    }
-
-    if (!finished) {
-      advanceToNextPlayer();
     }
   }
 
@@ -146,11 +143,12 @@ class AuctionRound {
 
   private void raiseBid(Player player, int bid) {
     currentBid = bid;
+    playerBids.set(players.indexOf(player), bid);
     game.gameLog(player.getName() + " raises to " + bid + ".");
   }
 
   private void pass(Player player) {
-    int payment = currentBid / 2;
+    int payment = getPlayerBid(player) / 2;
     if (payment > player.getCoins()) {
       payment = player.getCoins();
     }
@@ -191,11 +189,21 @@ class AuctionRound {
     }
 
     PropertyCard highest = offerings.remove(offerings.size() - 1);
-    winner.spendCoins(currentBid);
+    int winningBid = getPlayerBid(winner);
+    winner.spendCoins(winningBid);
     winner.addProperty(highest);
     game.gameLog(winner.getName() + " wins the auction and takes " + highest.getValue()
-      + " for " + currentBid + " coins.");
+      + " for " + winningBid + " coins.");
     game.setAuctionWinner(winnerIndex);
+  }
+
+  private int getPlayerBid(Player player) {
+    int playerIndex = players.indexOf(player);
+    if (playerIndex == -1) {
+      return 0;
+    }
+
+    return playerBids.get(playerIndex);
   }
 
   private String offeringSummary() {
