@@ -18,36 +18,43 @@ void draw() {
   background(245);
   fill(20);
 
+  int margin = 20;
+  int leftX = margin;
+  int leftWidth = 470;
+  int rightX = 540;
+  int rightWidth = width - rightX - margin;
+
   textSize(24);
-  text("ForSale - Game Window", 20, 20);
+  text("ForSale - Game Window", leftX, 20);
   textSize(18);
-  text("Phase: " + game.getPhaseStatus(), 20, 60);
-  text("Click a button to choose your move.", 20, 90);
+  text("Phase: " + game.getPhaseStatus(), leftX, 60);
+  text("Click a button to choose your move.", leftX, 90);
 
   stroke(180);
-  line(20, 120, width - 20, 120);
+  line(margin, 120, width - margin, 120);
+  line(rightX - 20, 130, rightX - 20, height - margin);
 
   textSize(16);
-  text("Prompt:", 20, 130);
-  text(game.getPrompt(), 20, 160, width - 40, 100);
+  text("Prompt:", leftX, 130);
+  text(game.getPrompt(), leftX, 160, leftWidth, 90);
 
-  drawButtons();
+  text("Player status:", rightX, 130);
+  String[] statusLines = game.getPlayerStatusLines();
+  for (int i = 0; i < statusLines.length; i++) {
+    text(statusLines[i], rightX, 160 + i * 42, rightWidth, 38);
+  }
+
+  int buttonBottom = drawButtons(leftX, 270, leftWidth);
+  int logTop = max(340, buttonBottom + 24);
   stroke(120);
-  line(20, 300, width - 20, 300);
+  line(leftX, logTop - 20, leftX + leftWidth, logTop - 20);
 
   fill(0);
   textSize(16);
-  text("Game Log:", 20, 320);
+  text("Game Log:", leftX, logTop);
   String[] logLines = game.getLogLines();
   for (int i = 0; i < logLines.length; i++) {
-    text(logLines[i], 20, 350 + i * 22);
-  }
-
-  textSize(16);
-  text("Player status:", 520, 130);
-  String[] statusLines = game.getPlayerStatusLines();
-  for (int i = 0; i < statusLines.length; i++) {
-    text(statusLines[i], 520, 160 + i * 22);
+    text(logLines[i], leftX, logTop + 30 + i * 24, leftWidth, 22);
   }
 
   game.update();
@@ -62,25 +69,29 @@ void mousePressed() {
   }
 }
 
-void drawButtons() {
+int drawButtons(int startX, int startY, int maxWidth) {
   buttons.clear();
 
   String[] labels = game.getButtonLabels();
-  int buttonX = 20;
-  int buttonY = 260;
-  int buttonWidth = 110;
+  int buttonX = startX;
+  int buttonY = startY;
+  int buttonWidth = 86;
   int buttonHeight = 34;
   int gap = 10;
+  int bottom = buttonY;
 
   for (int i = 0; i < labels.length; i++) {
     Button button = new Button(labels[i], labels[i], buttonX, buttonY, buttonWidth, buttonHeight);
     buttons.add(button);
     button.draw();
+    bottom = max(bottom, buttonY + buttonHeight);
 
     buttonX += buttonWidth + gap;
-    if (buttonX + buttonWidth > width - 20) {
-      buttonX = 20;
+    if (buttonX + buttonWidth > startX + maxWidth) {
+      buttonX = startX;
       buttonY += buttonHeight + gap;
     }
   }
+
+  return bottom;
 }
