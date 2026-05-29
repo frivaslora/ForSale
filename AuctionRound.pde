@@ -4,7 +4,6 @@ class AuctionRound {
   private ArrayList<Integer> activeIndices;
   private ArrayList<Integer> playerBids;
   private int currentOfferer;
-  private int currentBid;
   private boolean finished;
   private Game game;
 
@@ -12,7 +11,6 @@ class AuctionRound {
     this.players = players;
     this.offerings = offerings;
     this.game = game;
-    currentBid = 0;
     activeIndices = new ArrayList<Integer>();
     playerBids = new ArrayList<Integer>();
 
@@ -45,7 +43,7 @@ class AuctionRound {
   }
 
   String getPrompt() {
-    return getCurrentPlayer().getName() + "'s turn. Current bid: " + currentBid
+    return getCurrentPlayer().getName() + "'s turn. Current bid: " + getHighestBid()
       + ". Choose a higher bid or pass.";
   }
 
@@ -53,12 +51,13 @@ class AuctionRound {
     Player player = getCurrentPlayer();
     ArrayList<String> labels = new ArrayList<String>();
     labels.add("Pass");
+    int highestBid = getHighestBid();
 
-    addBidButton(labels, currentBid + 1, player);
-    addBidButton(labels, currentBid + 2, player);
-    addBidButton(labels, currentBid + 3, player);
+    addBidButton(labels, highestBid + 1, player);
+    addBidButton(labels, highestBid + 2, player);
+    addBidButton(labels, highestBid + 3, player);
 
-    if (player.getCoins() > currentBid + 3) {
+    if (player.getCoins() > highestBid + 3) {
       labels.add(str(player.getCoins()));
     }
 
@@ -76,9 +75,10 @@ class AuctionRound {
     }
 
     Player player = getCurrentPlayer();
-    int nextBid = currentBid + 1;
+    int highestBid = getHighestBid();
+    int nextBid = highestBid + 1;
 
-    if (nextBid > player.getCoins() || player.getCoins() <= currentBid) {
+    if (nextBid > player.getCoins() || player.getCoins() <= highestBid) {
       pass(player);
     } else {
       raiseBid(player, nextBid);
@@ -98,8 +98,9 @@ class AuctionRound {
     } else {
       try {
         int bid = Integer.parseInt(input);
-        if (bid <= currentBid) {
-          game.gameLog("Bid must be higher than " + currentBid + ".");
+        int highestBid = getHighestBid();
+        if (bid <= highestBid) {
+          game.gameLog("Bid must be higher than " + highestBid + ".");
           return;
         }
         if (bid > player.getCoins()) {
@@ -142,7 +143,6 @@ class AuctionRound {
   }
 
   private void raiseBid(Player player, int bid) {
-    currentBid = bid;
     playerBids.set(players.indexOf(player), bid);
     game.gameLog(player.getName() + " raises to " + bid + ".");
   }
@@ -204,6 +204,19 @@ class AuctionRound {
     }
 
     return playerBids.get(playerIndex);
+  }
+
+  private int getHighestBid() {
+    int highestBid = 0;
+
+    for (int playerIndex : activeIndices) {
+      int bid = playerBids.get(playerIndex);
+      if (bid > highestBid) {
+        highestBid = bid;
+      }
+    }
+
+    return highestBid;
   }
 
   private String offeringSummary() {
