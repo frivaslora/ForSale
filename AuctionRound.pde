@@ -1,4 +1,6 @@
 class AuctionRound {
+  private static final int BID_INCREMENT = 1000;
+
   private ArrayList<Player> players;
   private ArrayList<PropertyCard> offerings;
   private ArrayList<Integer> activeIndices;
@@ -53,11 +55,11 @@ class AuctionRound {
     labels.add("Pass");
     int highestBid = getHighestBid();
 
-    addBidButton(labels, highestBid + 1, player);
-    addBidButton(labels, highestBid + 2, player);
-    addBidButton(labels, highestBid + 3, player);
+    addBidButton(labels, highestBid + BID_INCREMENT, player);
+    addBidButton(labels, highestBid + BID_INCREMENT * 2, player);
+    addBidButton(labels, highestBid + BID_INCREMENT * 3, player);
 
-    if (player.getCoins() > highestBid + 3) {
+    if (player.getCoins() > highestBid + BID_INCREMENT * 3) {
       labels.add(str(player.getCoins()));
     }
 
@@ -76,7 +78,7 @@ class AuctionRound {
 
     Player player = getCurrentPlayer();
     int highestBid = getHighestBid();
-    int nextBid = highestBid + 1;
+    int nextBid = highestBid + BID_INCREMENT;
 
     if (nextBid > player.getCoins() || player.getCoins() <= highestBid) {
       pass(player);
@@ -105,6 +107,10 @@ class AuctionRound {
         }
         if (bid > player.getCoins()) {
           game.gameLog("You do not have enough coins for that bid.");
+          return;
+        }
+        if (bid % BID_INCREMENT != 0) {
+          game.gameLog("Bids must be in " + BID_INCREMENT + " coin increments.");
           return;
         }
         raiseBid(player, bid);
@@ -148,7 +154,7 @@ class AuctionRound {
   }
 
   private void pass(Player player) {
-    int payment = getPlayerBid(player) / 2;
+    int payment = getPassPayment(player);
     if (payment > player.getCoins()) {
       payment = player.getCoins();
     }
@@ -204,6 +210,10 @@ class AuctionRound {
     }
 
     return playerBids.get(playerIndex);
+  }
+
+  private int getPassPayment(Player player) {
+    return (getPlayerBid(player) / (BID_INCREMENT * 2)) * BID_INCREMENT;
   }
 
   private int getHighestBid() {
